@@ -15,13 +15,36 @@ class Mongo {
         .then((client) => {
           debug("MongoDB connected");
           this.db = client.db(config.mongoDBDatabase);
+          this.fetchLatestData();
         });
   }
 
-  logWeather(sensorId, temperature, humidity, pressure, co2) {
+  async fetchLatestData() {
+    const collection = this.db.collection("dataLog");
+    const sensorId = 1;
+    const hourData = await collection.findOne(
+        {
+          sensorId
+        },
+        {
+          sort: [["time", -1]]
+        }
+    );
+
+    const lastEntry = hourData.entries[hourData.entryCount - 1];
+    lastEntry.sensorId = sensorId;
+    const latestData = this.app.get("latestData");
+    latestData[sensorId] = lastEntry;
+
+    this.app.get("state").latestDataAvailable = true;
+  }
+
+  /**
+   * @param {Data} data
+   */
+  logWeather({time, sensorId, temperature, humidity, pressure, co2}) {
     debug(`ID: ${sensorId}, temperature: ${temperature}, humidity: ${humidity}, pressure: ${pressure}, co2: ${co2}`);
     const collection = this.db.collection("dataLog");
-    const time = new Date();
     const timeHour = new Date(time);
     timeHour.setMinutes(0, 0, 0);
 

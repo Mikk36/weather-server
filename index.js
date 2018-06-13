@@ -17,8 +17,20 @@ const Mongo = require("./mongo");
 
 const api = require("./routes/api");
 
+/**
+ * @type {Data[]}
+ */
+const latestData = [];
+app.set("latestData", latestData);
+
+const state = {
+  latestDataAvailable: false
+};
+
+app.set("state", state);
 app.set("config", config);
 app.set("mongo", new Mongo(app));
+app.set("io", io);
 http.listen(config.httpPort, "0.0.0.0");
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -29,11 +41,17 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 app.use("/api", api);
 
-io.on("connection", (socket) => {
-  debug.log(`New IO connection, id: ${socket.id}`);
+io.on("connection", (/** Socket */ socket) => {
+  debug(`New IO connection, id: ${socket.id}`);
+
+  socket.emit("hello");
+
+  if(state.latestDataAvailable) {
+    socket.emit("newData", latestData[1]);
+  }
 
   socket.on("disconnect", () => {
-    debug.log(`IO connection closed, id: ${socket.id}`);
+    debug(`IO connection closed, id: ${socket.id}`);
   });
 });
 
