@@ -10,6 +10,7 @@ router.post('/reportData', function (req, res) {
   if (data.sensorId !== undefined) {
     data.time = new Date();
     req.app.get("mongo").logWeather(data);
+    req.app.get("latestData")[data.sensorId] = data;
 
     /** @type Server */
     const io = req.app.get("io");

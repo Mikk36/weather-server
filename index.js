@@ -32,6 +32,9 @@ app.set("config", config);
 app.set("mongo", new Mongo(app));
 app.set("io", io);
 http.listen(config.httpPort, "0.0.0.0");
+http.on("listening", () => {
+  debug("Server listening");
+});
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(compression());
@@ -47,7 +50,8 @@ io.on("connection", (/** Socket */ socket) => {
   socket.emit("hello");
 
   if(state.latestDataAvailable) {
-    socket.emit("newData", latestData[1]);
+    const latest = app.get("latestData");
+    socket.emit("newData", latest[1]);
   }
 
   socket.on("disconnect", () => {
